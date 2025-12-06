@@ -1,19 +1,20 @@
 # Decision Helper Bot
 
-A Telegram bot that helps you make decisions by generating creative "Yes" or "No" responses using AI (SmolLM-360M-Instruct).
+A lightweight Telegram bot that helps you make decisions by providing creative "Yes" or "No" responses from pre-defined lists.
 
 ## Features
 
 - `/start` - Welcome message with instructions
-- `/yes_or_no` - Get a random yes or no answer with AI-generated creative phrasing
+- `/yes_or_no` - Get a random yes or no answer with creative phrasing
 - Responds to text, voice messages, and images with random yes/no answers
-- Uses HuggingFace's SmolLM-360M-Instruct model for lightweight, creative responses
+- Uses pre-defined lists of creative "yes" and "no" synonyms
+- Lightweight and fast - no AI model required!
 
 ## Requirements
 
 - Python 3.8+
-- At least 2GB RAM (model is only 360M parameters)
-- CPU is sufficient (no GPU required)
+- Minimal RAM requirements (~50MB)
+- Works on any hardware (no GPU/CPU-intensive operations)
 
 ## Setup
 
@@ -24,22 +25,14 @@ A Telegram bot that helps you make decisions by generating creative "Yes" or "No
 docker build -t decision-helper-bot .
 ```
 
-2. Create a Docker volume for model caching:
-```bash
-docker volume create decision-bot-cache
-```
-
-3. Run the container:
+2. Run the container:
 ```bash
 docker run -d \
   --name decision-helper-bot \
   --restart unless-stopped \
   -e BOT_TOKEN="your_bot_token_here" \
-  -v decision-bot-cache:/app/model_cache \
   decision-helper-bot
 ```
-
-The model (~700MB) will be downloaded on first run and cached in the Docker volume for future use.
 
 To view logs:
 ```bash
@@ -64,7 +57,7 @@ pip install -r requirements.txt
 export BOT_TOKEN="your_bot_token_here"
 ```
 
-3. Run the bot (first run will download the model ~700MB):
+3. Run the bot:
 ```bash
 python bot.py
 ```
@@ -74,33 +67,36 @@ python bot.py
 1. Start a chat with your bot on Telegram
 2. Send `/start` to get started
 3. Use `/yes_or_no` or send any message (text, voice, or image) to get a random yes/no answer
-4. The bot will generate creative phrases like "Absolutely!", "Not a chance", "Go for it!", etc.
+4. The bot will respond with creative phrases like:
+   - **Yes phrases**: "Absolutely!", "Go for it!", "Full steam ahead!", "You bet!", etc.
+   - **No phrases**: "Not a chance!", "Hard pass.", "Abort mission!", "Better not.", etc.
 
 ## Technical Details
 
-- Model: HuggingFaceTB/SmolLM-360M-Instruct (360M parameters)
-- Optimized for CPU usage with float32 precision
-- Lightweight enough to run on modest hardware
-- Docker image based on `python:3.11-slim` for minimal size
-- Model cache persisted in Docker volume to avoid re-downloading
+- **No AI/ML models**: Uses pre-defined lists for instant responses
+- **Lightweight**: Only requires the pyTelegramBotAPI library
+- **Fast**: Instant responses with no model loading time
+- **Resource-efficient**: Uses minimal CPU and RAM (~50MB)
+- **Docker image**: Based on `python:3.11-slim` (~150MB total)
+
+## Customization
+
+You can easily customize the bot by editing the `YES_PHRASES` and `NO_PHRASES` lists in `bot.py` to add your own creative responses!
 
 ## Docker Details
 
 The Docker setup includes:
-- **Dockerfile**: Uses Python 3.11 slim image (~150MB base)
-- **Persistent storage**: Model cache stored in Docker volume
+- **Dockerfile**: Uses Python 3.11 slim image (~150MB)
 - **Auto-restart**: Container restarts automatically on failure
-- **Memory usage**: Approximately 2-3GB RAM
+- **Memory usage**: Approximately 50MB RAM
 
 Optional: Add memory limits to the docker run command:
 ```bash
 docker run -d \
   --name decision-helper-bot \
   --restart unless-stopped \
-  --memory="3g" \
-  --memory-reservation="2g" \
+  --memory="256m" \
+  --memory-reservation="128m" \
   -e BOT_TOKEN="your_token" \
-  -v decision-bot-cache:/app/model_cache \
   decision-helper-bot
 ```
-

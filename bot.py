@@ -2,8 +2,6 @@ import os
 import random
 import telebot
 from telebot import types
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
 
 # Get bot token from environment variable
 BOT_TOKEN = os.getenv('BOT_TOKEN')
@@ -12,90 +10,101 @@ if not BOT_TOKEN:
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Load the SmolLM model
-print("Loading SmolLM-360M-Instruct model...")
-model_name = "HuggingFaceTB/SmolLM-360M-Instruct"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch.float32,  # Use float32 for CPU compatibility
-    device_map="auto"
-)
-print("Model loaded successfully!")
+# Pre-defined lists of "yes" and "no" synonyms
+YES_PHRASES = [
+    "Absolutely!",
+    "Yes!",
+    "Definitely!",
+    "Go for it!",
+    "Without a doubt!",
+    "Of course!",
+    "Sure thing!",
+    "Why not?",
+    "You bet!",
+    "Indeed!",
+    "Certainly!",
+    "For sure!",
+    "Totally!",
+    "All the way!",
+    "I'm in!",
+    "100%!",
+    "Affirmative!",
+    "Do it!",
+    "By all means!",
+    "You have my blessing!",
+    "Make it happen!",
+    "Full steam ahead!",
+    "Green light!",
+    "Go ahead!",
+    "Yep!",
+    "Yup!",
+    "Yeah!",
+    "Uh-huh!",
+    "Roger that!",
+    "Positive!",
+    "Sounds good!",
+    "I'm down!",
+    "Count me in!",
+    "Heck yeah!",
+    "Hell yeah!",
+    "Damn right!",
+    "You should!",
+    "It's a go!",
+    "Thumbs up!",
+    "Right on!",
+]
 
-
-def generate_yes_or_no_phrase(decision: str):
-    """
-    Generate a creative phrase that means yes or no using SmolLM
-    
-    Args:
-        decision: Either "yes" or "no"
-    
-    Returns:
-        A generated phrase with the same meaning
-    """
-    if decision.lower() == "yes":
-        prompt = """Task: Give one short phrase meaning "yes". Start your answer with >>> symbol.
-
-Examples:
->>> Absolutely!
->>> Go for it! I dare you!
-
-Now give me a DIFFERENT one:"""
-    else:
-        prompt = """Task: Give one short phrase meaning "no". Start your answer with >>> symbol.
-
-Examples:
->>> Not a chance!
->>> No freaking way!
-
-Now give me a DIFFERENT one:"""
-    
-    # Format as chat message
-    messages = [{"role": "user", "content": prompt}]
-    input_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-    
-    # Tokenize and generate
-    inputs = tokenizer(input_text, return_tensors="pt").to(model.device)
-    
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=15,  # Even shorter
-            temperature=1.6,
-            top_p=0.4,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id,
-            eos_token_id=tokenizer.eos_token_id
-        )
-    
-    # Decode and extract the response
-    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    
-    # Split by the marker symbol
-    if ">>>" in generated_text:
-        parts = generated_text.split(">>>")
-        # Get the last occurrence (the generated one, not examples)
-        response = parts[-1].strip()
-    else:
-        # Fallback: try to extract after "assistant" or just use the end
-        response = generated_text.split("assistant")[-1].strip()
-    
-    # Clean up: take only first line and remove extra punctuation/quotes
-    response = response.split('\n')[0].strip()
-    response = response.strip('"\'.,;')
-    
-    # If response is empty, too long, or still contains instruction text, use fallback
-    if not response or "Task:" in response or "Example" in response:
-        return "Yes!" if decision.lower() == "yes" else "No."
-    
-    return response
+NO_PHRASES = [
+    "No.",
+    "Nope.",
+    "Absolutely not!",
+    "Not a chance!",
+    "No way!",
+    "I don't think so.",
+    "Better not.",
+    "Definitely not!",
+    "Not today.",
+    "Hard pass.",
+    "Nah.",
+    "Negative.",
+    "Nope, nope, nope!",
+    "Don't do it!",
+    "I wouldn't.",
+    "Maybe skip this one.",
+    "Not recommended.",
+    "Red flag!",
+    "Abort mission!",
+    "Think twice.",
+    "Probably not.",
+    "Not your best idea.",
+    "Pass.",
+    "No go.",
+    "Thumbs down.",
+    "Forget it.",
+    "Not happening.",
+    "No can do.",
+    "Not on my watch!",
+    "Don't even think about it!",
+    "Step back.",
+    "Denied.",
+    "Sorry, no.",
+    "Afraid not.",
+    "Not this time.",
+    "Hold off.",
+    "Bad idea.",
+    "Veto!",
+    "Never!",
+    "Not in a million years!",
+]
 
 
 def random_yes_or_no():
-    """Return a random yes or no decision and generate a creative phrase"""
+    """Return a random yes or no phrase from pre-defined lists"""
     decision = random.choice(["yes", "no"])
-    return generate_yes_or_no_phrase(decision)
+    if decision == "yes":
+        return random.choice(YES_PHRASES)
+    else:
+        return random.choice(NO_PHRASES)
 
 
 @bot.message_handler(commands=['start'])
@@ -136,4 +145,3 @@ def handle_text(message):
 if __name__ == '__main__':
     print("Bot is running...")
     bot.infinity_polling()
-
