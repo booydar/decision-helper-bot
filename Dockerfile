@@ -10,8 +10,10 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the bot code
+# Copy the bot code and dependencies
 COPY bot.py .
+COPY yes_no.py .
+COPY data/ data/
 
 # Run the bot
 CMD ["python", "-u", "bot.py"]
